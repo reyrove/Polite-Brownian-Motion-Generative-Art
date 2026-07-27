@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Polite Brownian Motion</title>
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/svg+xml" href="fav.svg">
+  
+  <style>
+    /* --- PERFECT RESET --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+    }
+    
+    /* --- MAIN CONTAINER --- */
+    #main-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      padding: 20px;
+      gap: 8px;
+    }
+    
+    /* --- TITLE (CENTER TOP) --- */
+    .title-bar {
+      text-align: center;
+      flex-shrink: 0;
+      padding: 2px 0;
+      width: 100%;
+    }
+    .title-bar .title {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 8px;
+      color: rgba(255,255,255,0.85);
+      text-transform: uppercase;
+    }
+    .title-bar .title .accent {
+      color: #c9a84c;
+      font-weight: 400;
+    }
+    
+    /* --- CANVAS CONTAINER --- */
+    #canvas-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 0;
+      padding: 0 10px;
+      position: relative;
+    }
+    
+    #canvas-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      box-shadow: 0 0 80px rgba(0,0,0,0.9);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+      background: #0a0a0a;
+    }
+    
+    #canvas-wrapper canvas {
+      display: block !important;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto !important;
+      height: auto !important;
+      object-fit: contain;
+      border-radius: 2px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+    
+    /* --- SHIRT MOCKUP --- */
+    #shirt-mockup {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 2px;
+      box-shadow: 0 0 80px rgba(0,0,0,0.9);
+      z-index: 2;
+    }
+    #shirt-mockup.active {
+      display: block !important;
+      animation: fadeIn 0.6s ease;
+    }
+    
+    /* Fallback when image doesn't load */
+    #shirt-mockup.fallback {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 2px solid rgba(201, 168, 76, 0.3);
+      border-radius: 12px;
+      min-width: 200px;
+      min-height: 200px;
+      color: rgba(255,255,255,0.5);
+      font-size: 16px;
+      letter-spacing: 2px;
+      z-index: 2;
+    }
+    #shirt-mockup.fallback::after {
+      content: "👕 POLITE BROWNIAN MOTION";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      line-height: 2;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    
+    /* --- BOTTOM BAR --- */
+    .bottom-bar {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    
+    /* --- CONTROLS --- */
+    .controls-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .controls {
+      color: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.04);
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.3s ease;
+      letter-spacing: 0.8px;
+      touch-action: manipulation;
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .controls:hover {
+      color: rgba(255,255,255,0.95);
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+    }
+    .controls:active {
+      transform: scale(0.95);
+    }
+    .controls .key {
+      color: rgba(255,255,255,0.5);
+      font-weight: 300;
+    }
+    .controls .sep {
+      color: rgba(255,255,255,0.15);
+      margin: 0 4px;
+    }
+    
+    /* --- SHIRT BUTTON --- */
+    .controls.shirt-btn {
+      border-color: rgba(201, 168, 76, 0.2);
+      color: rgba(201, 168, 76, 0.7);
+      letter-spacing: 1px;
+    }
+    .controls.shirt-btn:hover {
+      border-color: rgba(201, 168, 76, 0.4);
+      color: #c9a84c;
+      background: rgba(201, 168, 76, 0.06);
+    }
+    .controls.shirt-btn.active {
+      border-color: rgba(201, 168, 76, 0.5);
+      color: #c9a84c;
+      background: rgba(201, 168, 76, 0.08);
+    }
+    .controls.shirt-btn .icon {
+      font-size: 14px;
+      line-height: 1;
+    }
+    
+    /* --- INFO ROW --- */
+    .info-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      color: rgba(255,255,255,0.3);
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      flex-wrap: wrap;
+      padding: 2px 0;
+    }
+    .info-row .info-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.02);
+    }
+    .info-row .label {
+      color: rgba(255,255,255,0.25);
+      font-weight: 300;
+    }
+    .info-row .value {
+      color: rgba(255,255,255,0.6);
+      font-weight: 400;
+    }
+    
+    /* --- DESCRIPTION --- */
+    .description {
+      display: block;
+      text-align: center;
+      color: rgba(255,255,255,0.25);
+      font-size: 8px;
+      letter-spacing: 1.2px;
+      line-height: 1.8;
+      padding: 2px 10px;
+      font-weight: 300;
+      max-width: 500px;
+      width: 100%;
+      text-transform: uppercase;
+    }
+    .description .highlight {
+      color: rgba(255,255,255,0.4);
+    }
+    .description .sep {
+      color: rgba(255,255,255,0.08);
+      margin: 0 4px;
+    }
+    
+    /* ============================================
+       RESPONSIVE
+    ============================================ */
+    
+    @media (max-width: 1024px) {
+      #main-container { padding: 16px; gap: 6px; }
+      .title-bar .title { font-size: 20px; letter-spacing: 6px; }
+      .controls { font-size: 10px; padding: 7px 16px; min-height: 34px; }
+      .info-row { font-size: 8.5px; gap: 12px; }
+      .info-row .info-item { padding: 2px 10px; }
+      .description { font-size: 7.5px; letter-spacing: 1px; }
+    }
+    
+    @media (max-width: 768px) {
+      #main-container { padding: 12px; gap: 5px; }
+      .title-bar .title { font-size: 17px; letter-spacing: 5px; }
+      #canvas-container { padding: 0 6px; }
+      .controls { font-size: 9px; padding: 6px 14px; min-height: 32px; letter-spacing: 0.6px; }
+      .controls-row { gap: 6px; }
+      .info-row { font-size: 8px; gap: 10px; }
+      .info-row .info-item { padding: 2px 8px; }
+      .description { font-size: 7px; letter-spacing: 0.8px; padding: 2px 6px; }
+      .controls.shirt-btn .icon { font-size: 12px; }
+    }
+    
+    @media (max-width: 480px) {
+      #main-container { padding: 8px; gap: 4px; }
+      .title-bar .title { font-size: 14px; letter-spacing: 4px; }
+      #canvas-container { padding: 0 4px; }
+      .controls { font-size: 8px; padding: 5px 12px; min-height: 28px; border-radius: 24px; letter-spacing: 0.4px; }
+      .controls-row { gap: 4px; }
+      .info-row { font-size: 7px; gap: 8px; }
+      .info-row .info-item { padding: 2px 6px; gap: 4px; }
+      .description { font-size: 6.5px; letter-spacing: 0.6px; padding: 2px 4px; line-height: 1.6; }
+      .controls.shirt-btn .icon { font-size: 11px; }
+    }
+    
+    @media (max-width: 380px) {
+      #main-container { padding: 6px; gap: 3px; }
+      .title-bar .title { font-size: 12px; letter-spacing: 3px; }
+      #canvas-container { padding: 0 2px; }
+      .controls { font-size: 7px; padding: 4px 10px; min-height: 26px; border-radius: 20px; }
+      .info-row { font-size: 6.5px; gap: 6px; }
+      .info-row .info-item { padding: 1px 5px; border-radius: 14px; }
+      .description { font-size: 6px; letter-spacing: 0.5px; padding: 1px 3px; }
+      .controls.shirt-btn .icon { font-size: 10px; }
+    }
+    
+    @media (orientation: landscape) and (max-height: 500px) {
+      #main-container { padding: 10px 20px; gap: 4px; flex-direction: row; flex-wrap: wrap; }
+      .title-bar { width: 100%; flex-shrink: 0; }
+      .title-bar .title { font-size: 16px; letter-spacing: 4px; }
+      #canvas-container { flex: 1; min-height: 0; height: 100%; padding: 0 8px; }
+      .bottom-bar { width: auto; max-width: 180px; flex-shrink: 0; gap: 4px; padding: 0 4px; }
+      .controls { font-size: 8px; padding: 5px 12px; min-height: 28px; letter-spacing: 0.4px; }
+      .controls-row { flex-direction: column; gap: 4px; }
+      .info-row { font-size: 7px; gap: 6px; flex-direction: column; align-items: stretch; }
+      .info-row .info-item { padding: 2px 8px; justify-content: center; }
+      .description { font-size: 6px; max-width: 160px; padding: 1px 4px; line-height: 1.4; letter-spacing: 0.5px; }
+    }
+    
+    @media (orientation: landscape) and (max-height: 380px) {
+      #main-container { padding: 6px 12px; gap: 3px; }
+      .title-bar .title { font-size: 13px; letter-spacing: 3px; }
+      #canvas-container { padding: 0 4px; }
+      .bottom-bar { max-width: 140px; gap: 3px; }
+      .controls { font-size: 7px; padding: 4px 10px; min-height: 24px; border-radius: 16px; }
+      .info-row { font-size: 6px; gap: 4px; }
+      .info-row .info-item { padding: 1px 6px; }
+      .description { font-size: 5.5px; max-width: 120px; padding: 1px 3px; }
+    }
+    
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      #canvas-wrapper canvas { image-rendering: auto; }
+    }
+    
+    @supports (-webkit-touch-callout: none) {
+      .controls { min-height: 40px; }
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+      .controls, #canvas-wrapper canvas, #shirt-mockup { transition: none; }
+      #shirt-mockup.active { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- MAIN CONTAINER -->
+<div id="main-container">
+
+  <!-- TITLE (CENTER TOP) -->
+  <div class="title-bar">
+    <div class="title"><span class="accent">Polite</span> Brownian Motion</div>
+  </div>
+
+  <!-- CANVAS CONTAINER -->
+  <div id="canvas-container">
+    <div id="canvas-wrapper">
+      <img id="shirt-mockup" src="Polite-Brownian-Motion.jpg" alt="Polite Brownian Motion on T-Shirt" />
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+
+    <!-- CONTROLS ROW -->
+    <div class="controls-row">
+      <div class="controls" id="controlsBar">
+        <span class="key">●</span> regenerate <span class="sep">—</span> <span class="key">S</span> save
+      </div>
+      <div class="controls shirt-btn" id="shirtToggle">
+        <span class="icon">◷</span> apparel
+      </div>
+    </div>
+
+    <!-- INFO ROW -->
+    <div class="info-row">
+      <div class="info-item">
+        <span class="label">background</span>
+        <span class="value" id="bgDisplay">---</span>
+      </div>
+      <div class="info-item">
+        <span class="label">colors</span>
+        <span class="value" id="colorsDisplay">---</span>
+      </div>
+      <div class="info-item">
+        <span class="label">steps</span>
+        <span class="value" id="stepsDisplay">---</span>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION -->
+    <div class="description">
+      <span class="highlight">polite brownian motion</span>
+      <span class="sep">·</span>
+      <span class="highlight">45 color palettes</span>
+      <span class="sep">·</span>
+      <span class="highlight">generative art</span>
+      <span class="sep">·</span>
+      <span class="highlight">brownian paths</span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ============================================
+// POLITE BROWNIAN MOTION — Generative Art
+// ============================================
+
+const ratio = 1 / 1;
+const prefix = 'Polite Brownian Motion';
+
+// ============================================
+// Random utility (replaces fxhash)
+// ============================================
+let seed = Math.random() * 2147483647;
+
+function setSeed(newSeed) {
+    seed = newSeed;
+}
+
+function random() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+}
+
+// ============================================
+// Color palettes
+// ============================================
+const backgroundColours = [
+    '#000000','#040720','#34282C','#3A3B3C','#151B54',
+    '#151B8D','#033E3E','#25383C','#3C565B','#1F6357',
+    '#006A4E','#4B5320','#254117','#004225','#665D1E',
+    '#473810','#3B2F2F','#8B0000','#660000','#3F000F',
+    '#2B1B17','#550A35','#36013F','#2E1A47','#FBBBB9',
+    '#F8B88B','#FF6347'
+];
+const backgroundNames = [
+    'black','Black Blue','Charcoal','Stormy Gray','Night Blue',
+    'Denim Dark Blue','Deep Teal','DarkSlateGray','Blue Moss Green',
+    'Dark Green Blue','Bottle Green','Army Green','Dark Forest Green',
+    'Lotus Green','Antique Bronze','Dark Hazel Brown','Dark Coffee',
+    'DarkRed','Red Blood','Chocolate Brown','Midnight','Purple Lily',
+    'Deep Purple','Midnight Purple','Deep Rose','Pastel Orange','Tomato'
+];
+
+const foregroundColours = [
+  ['#A0CE31','#5F31CE'],
+  ['#0EDEF1','#F1210E'],
+  ['#0EDEF1','#930EF1','#F1210E','#6CF10E'],
+  ['#A33FC0','#C03F9C','#633FC0'],
+  ['#D53F2A','#D5942A','#D52A6B'],
+  ['#EEEF10','#7EEF10','#EF8110'],
+  ['#EA15D0','#EA1566','#9915EA'],
+  ['#72C837','#37C844','#BBC837'],
+  ['#B7487A','#B2B748','#48B785','#4D48B7'],
+  ['#0062FF','#FF00E2','#FF9D00','#00FF1D'],
+  ['#46B975','#05FA1C','#DFABC9','#B946A2'],
+  ['#8254AB','#05B1FA','#DFB7AB'],
+  ['#C1AAD5','#AB546F','#00FF1E'],
+  ['#1F07F8','#AB9854','#FFD400'],
+  ['#40BFAD','#9A8E65','#FF0100'],
+  ['#F10E83','#484330','#F1FF00'],
+  ['#707C8F','#C6C0A9','#BDFF00'],
+  ['#9D6286','#FA7676','#50AF80'],
+  ['#515FAE','#76E6FA','#AF5091'],
+  ['#2AD536','#76FAC2','#5052AF'],
+  ['#679895','#B10000','#5052AF'],
+  ['#98678D','#FFACAC','#EEE9D9'],                              
+  ['#F98BE2','#60EDFF','#A5924C'],
+  ['#065A58','#FAFFAC','#C4C4C4'],
+  ['#BA7645','#C4D100','#FF8A93'],
+  ['#0008A8','#4FFF93','#484F33'],
+  ['#FFE1E0','#D5C800','#608200'],
+  ['#424D78','#B32392','#C7FF27'],
+  ['#ED9F12','#DC7FC7','#00A2AC'],
+  ['#6E008D','#51CA3E','#CB8585'],
+  ['#E50099','#00E6DF','#793333'],
+  ['#005391','#DC75DE','#BFBA69'],
+  ['#05FA39','#6C1A6E','#69BDBF','#87D0FE'],
+  ['#D16C2F','#CFB6B9','#ADF62B','#1C7E70'],
+  ['#BE4187','#E29AEE','#D0D0CF','#65821C'],
+  ['#686A97','#979568'],
+  ['#4D2AD5','#B2D52A'],
+  ['#A4D42B','#2BD440','#B9A4EC','#8B7479','#FD6A02','#2BD48B','#241154','#AA5567'],
+  ['#A2A35C','#2BD4D3','#4B23AD','#AA5598','#FCC903','#669999','#2BAD23','#C3C68C'],
+  ['#DB24D2','#24DBDB','#5E735D','#F4FC56','#E51A29','#2481DB','#212820','#DBE171'],
+  ['#20D7DF','#B7B1FF'],
+  ['#97688F','#AB87A5'],
+  ['#3DA3C2','#63B6CF','#215ADE','#4D7BE5','#9AA35C','#AEB67C','#AB5467','#BC7685'],
+  ['#717F8E','#8D99A5','#2B63D4','#5582DD','#D629B2','#DE54C2','#4758B8','#6C79C6']
+];
+
+// ============================================
+// State
+// ============================================
+let features = {};
+let resizeTmr = null;
+let thumbnailTaken = false;
+let animated = false;
+let nextFrame = null;
+let showingShirt = false;
+
+// ============================================
+// Setup
+// ============================================
+function setup() {
+    const backgroundIndex = Math.floor(random() * backgroundColours.length);
+    const foregroundIndex = Math.floor(random() * foregroundColours.length);
+
+    features.backgroundColour = backgroundColours[backgroundIndex];
+    features.lineColours = foregroundColours[foregroundIndex];
+    features.MaxNumOfSteps = Math.floor(random() * 498 + 202);
+
+    let theta = new Array(features.lineColours.length);
+    let xsteps = new Array(features.lineColours.length);
+    let ysteps = new Array(features.lineColours.length);
+    
+    for (let j = 0; j <= features.lineColours.length; j++) {
+        theta[j] = random() * Math.PI / 2;
+        xsteps[j] = Math.floor(random() * features.MaxNumOfSteps + 50);
+        ysteps[j] = xsteps[j] * 1.6;
+    }
+    
+    features.Theta = theta;
+    features.Xsteps = xsteps;
+    features.Ysteps = ysteps;
+
+    // Update info display
+    document.getElementById('bgDisplay').textContent = backgroundNames[backgroundIndex];
+    document.getElementById('colorsDisplay').textContent = features.lineColours.length;
+    document.getElementById('stepsDisplay').textContent = features.MaxNumOfSteps;
+}
+
+// ============================================
+// Canvas drawing
+// ============================================
+function drawCanvas() {
+    window.cancelAnimationFrame(nextFrame);
+    
+    const canvas = document.getElementById('target');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+
+    let x = Math.floor(random() * features.Xsteps) * canvas.width / features.Xsteps;
+    let y = Math.floor(random() * features.Ysteps) * canvas.height / features.Ysteps;
+    let nextX, nextY;
+
+    ctx.fillStyle = features.backgroundColour;
+    ctx.fillRect(0, 0, w, h);
+    
+    const R = Math.floor(2 * Math.PI / Math.max.apply(Math, features.Theta) + 1);
+    const M = Math.floor(random() * 70 + 30);
+
+    for (let k = 0; k <= R; k++) {
+        for (let j = 1; j <= features.lineColours.length; j++) {
+            x = Math.max(w / M, Math.min(Math.floor(random() * features.Xsteps[j]) * w / features.Xsteps[j], (M - 1) * w / M));
+            y = Math.max(h / M, Math.min(Math.floor(random() * features.Xsteps[j]) * h / features.Xsteps[j], (M - 1) * h / M));
+            const P = Math.floor(random() * 10000 + 10000);
+            
+            for (let i = 0; i < P; i++) {
+                const Q = Math.floor(random() * 4);
+
+                if (Q == 0) {
+                    nextX = x + w / features.Xsteps[j] * Math.cos(features.Theta[j] * k);
+                    nextY = y - w / features.Xsteps[j] * Math.sin(features.Theta[j] * k);
+                    nextX = Math.max(w / M, Math.min(nextX, (M - 1) * w / M));
+                    nextY = Math.max(h / M, Math.min(nextY, (M - 1) * h / M));
+                } else if (Q == 1) {
+                    nextX = x - w / features.Xsteps[j] * Math.cos(features.Theta[j] * k);
+                    nextY = y + w / features.Xsteps[j] * Math.sin(features.Theta[j] * k);
+                    nextX = Math.max(w / M, Math.min(nextX, (M - 1) * w / M));
+                    nextY = Math.max(h / M, Math.min(nextY, (M - 1) * h / M));
+                } else if (Q == 2) {
+                    nextX = x + h / features.Ysteps[j] * Math.sin(features.Theta[j] * k);
+                    nextY = y + h / features.Ysteps[j] * Math.cos(features.Theta[j] * k);
+                    nextX = Math.max(w / M, Math.min(nextX, (M - 1) * w / M));
+                    nextY = Math.max(h / M, Math.min(nextY, (M - 1) * h / M));
+                } else if (Q == 3) {
+                    nextX = x - h / features.Ysteps[j] * Math.sin(features.Theta[j] * k);
+                    nextY = y - h / features.Ysteps[j] * Math.cos(features.Theta[j] * k);
+                    nextX = Math.max(w / M, Math.min(nextX, (M - 1) * w / M));
+                    nextY = Math.max(h / M, Math.min(nextY, (M - 1) * h / M));
+                }
+
+                ctx.strokeStyle = features.lineColours[j];
+                ctx.shadowColor = features.lineColours[j];
+                ctx.shadowBlur = w / (2 * features.Xsteps);
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(nextX, nextY);
+                ctx.stroke();
+
+                x = nextX;
+                y = nextY;
+            }
+        }
+    }
+
+    if (animated) {
+        nextFrame = window.requestAnimationFrame(drawCanvas);
+    }
+}
+
+// ============================================
+// Layout
+// ============================================
+function layoutCanvas() {
+    window.cancelAnimationFrame(nextFrame);
+
+    const wrapper = document.getElementById('canvas-wrapper');
+    const rect = wrapper.getBoundingClientRect();
+    
+    const wWidth = rect.width;
+    const wHeight = rect.height;
+    const dpr = window.devicePixelRatio || 1;
+
+    // Remove existing canvases
+    const canvases = wrapper.getElementsByTagName('canvas');
+    Array.from(canvases).forEach(c => c.remove());
+
+    let cWidth = wWidth;
+    let cHeight = cWidth / ratio;
+
+    if (cHeight > wHeight) {
+        cHeight = wHeight;
+        cWidth = wHeight * ratio;
+    }
+
+    const targetWidth = Math.floor(cWidth * dpr);
+    const targetHeight = Math.floor(cHeight * dpr);
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'target';
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    wrapper.appendChild(canvas);
+
+    canvas.style.position = 'absolute';
+    canvas.style.width = cWidth + 'px';
+    canvas.style.height = cHeight + 'px';
+    canvas.style.top = '50%';
+    canvas.style.left = '50%';
+    canvas.style.transform = 'translate(-50%, -50%)';
+    canvas.style.zIndex = '1';
+
+    // Canvas is always visible (behind shirt if shirt is active)
+    canvas.style.display = 'block';
+
+    drawCanvas();
+}
+
+// ============================================
+// Download
+// ============================================
+function downloadCanvas() {
+    if (showingShirt) {
+        const link = document.createElement('a');
+        link.download = 'Polite_Brownian_Motion_Shirt.png';
+        const img = document.getElementById('shirt-mockup');
+        if (img && img.src && !img.classList.contains('fallback')) {
+            link.href = img.src;
+        } else {
+            const canvas = document.getElementById('target');
+            if (canvas) link.href = canvas.toDataURL('image/png');
+        }
+        link.click();
+        return;
+    }
+    
+    const canvas = document.getElementById('target');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    const hash = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+    link.download = prefix + '_' + hash + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+// ============================================
+// Regenerate
+// ============================================
+function regenerate() {
+    setSeed(Math.random() * 2147483647);
+    setup();
+    const wrapper = document.getElementById('canvas-wrapper');
+    const canvas = wrapper.querySelector('canvas');
+    if (canvas) {
+        canvas.remove();
+    }
+    const shirtMockup = document.getElementById('shirt-mockup');
+    shirtMockup.classList.remove('active');
+    shirtMockup.classList.remove('fallback');
+    showingShirt = false;
+    const shirtToggle = document.getElementById('shirtToggle');
+    shirtToggle.classList.remove('active');
+    shirtToggle.innerHTML = '<span class="icon">◷</span> apparel';
+    layoutCanvas();
+}
+
+// ============================================
+// Toggle Shirt
+// ============================================
+function toggleShirt() {
+    showingShirt = !showingShirt;
+    
+    const canvas = document.getElementById('target');
+    const shirtMockup = document.getElementById('shirt-mockup');
+    const shirtToggle = document.getElementById('shirtToggle');
+    
+    if (showingShirt) {
+        // Canvas stays visible behind shirt
+        if (canvas) {
+            canvas.style.display = 'block';
+            canvas.style.zIndex = '1';
+        }
+        // Show shirt on top
+        shirtMockup.classList.add('active');
+        shirtMockup.style.zIndex = '2';
+        // Update button
+        shirtToggle.classList.add('active');
+        shirtToggle.innerHTML = '<span class="icon">◷</span> artwork';
+    } else {
+        // Canvas stays visible
+        if (canvas) {
+            canvas.style.display = 'block';
+            canvas.style.zIndex = '1';
+        }
+        // Hide shirt
+        shirtMockup.classList.remove('active');
+        // Update button
+        shirtToggle.classList.remove('active');
+        shirtToggle.innerHTML = '<span class="icon">◷</span> apparel';
+    }
+}
+
+// ============================================
+// Init
+// ============================================
+function init() {
+    setup();
+    layoutCanvas();
+
+    // Check if shirt image exists
+    const shirtImg = document.getElementById('shirt-mockup');
+    shirtImg.addEventListener('error', function() {
+        console.warn('Polite-Brownian-Motion.jpg not found — using fallback');
+        this.classList.add('fallback');
+    });
+    
+    shirtImg.addEventListener('load', function() {
+        console.log('Polite-Brownian-Motion.jpg loaded successfully!');
+        this.classList.remove('fallback');
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTmr);
+        resizeTmr = setTimeout(layoutCanvas, 100);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 's' || e.key === 'S') {
+            e.preventDefault();
+            downloadCanvas();
+        }
+        if (e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            regenerate();
+        }
+        if (e.key === 't' || e.key === 'T') {
+            e.preventDefault();
+            toggleShirt();
+        }
+        if (e.key === ' ' || e.key === 'Space') {
+            e.preventDefault();
+            regenerate();
+        }
+    });
+
+    // Button handlers
+    document.getElementById('controlsBar').addEventListener('click', regenerate);
+    document.getElementById('controlsBar').addEventListener('touchend', function(e) {
+        e.preventDefault();
+        regenerate();
+    });
+    
+    document.getElementById('shirtToggle').addEventListener('click', toggleShirt);
+    document.getElementById('shirtToggle').addEventListener('touchend', function(e) {
+        e.preventDefault();
+        toggleShirt();
+    });
+}
+
+// Start
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+
+// Expose functions globally
+window.regenerate = regenerate;
+window.saveImage = downloadCanvas;
+window.toggleShirt = toggleShirt;
+</script>
+</body>
+</html>
